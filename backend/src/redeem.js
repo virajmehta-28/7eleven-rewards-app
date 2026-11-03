@@ -9,11 +9,15 @@ export class RedemptionError extends Error {
 }
 
 export function findReward(rewardId) {
-  return REWARDS.find((r) => r.id === rewardId);
+  const id = String(rewardId);
+  return REWARDS.find((r) => String(r.id) === id);
 }
 
 export function redeemReward(member, rewardId) {
   const reward = findReward(rewardId);
+  if (!reward) {
+    throw new RedemptionError('REWARD_NOT_FOUND', `Unknown reward: ${rewardId}`, 404);
+  }
   const cost = reward.pointsCost;
 
   if (member.points < cost) {

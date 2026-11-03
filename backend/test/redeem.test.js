@@ -17,3 +17,25 @@ test('rejects redemption with insufficient points', () => {
   assert.throws(() => redeemReward(m, 1072), RedemptionError);
   assert.equal(m.points, 1000);
 });
+
+test('redeems when the reward id arrives as a string (URL path param)', () => {
+  const m = member();
+  const r = redeemReward(m, '1042');
+  assert.equal(r.rewardId, 1042);
+  assert.equal(r.pointsSpent, 400);
+  assert.equal(m.points, 600);
+});
+
+test('rejects an unknown reward id with REWARD_NOT_FOUND', () => {
+  const m = member();
+  assert.throws(() => redeemReward(m, '9999'), (err) => err instanceof RedemptionError && err.code === 'REWARD_NOT_FOUND' && err.status === 404);
+  assert.equal(m.points, 1000);
+});
+
+test('rejects malformed ids that only coerce to a catalog id', () => {
+  const m = member();
+  for (const bad of ['1042e0', '0x412', ' 1042', '1042.0']) {
+    assert.throws(() => redeemReward(m, bad), (err) => err instanceof RedemptionError && err.code === 'REWARD_NOT_FOUND', bad);
+  }
+  assert.equal(m.points, 1000);
+});
