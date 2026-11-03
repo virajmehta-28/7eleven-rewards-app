@@ -201,4 +201,8 @@ test('HTTP: preview then confirm end-to-end', async (t) => {
   const huge = await post('/checkout/preview', { cart, pad: 'x'.repeat(70 * 1024) });
   assert.equal(huge.status, 413);
   assert.equal(huge.body.error, 'PAYLOAD_TOO_LARGE');
+
+  const multibyte = await post('/checkout/preview', { cart, pad: '\u00e9'.repeat(40 * 1024) });
+  assert.equal(multibyte.status, 413);
+  assert.equal(multibyte.body.error, 'PAYLOAD_TOO_LARGE');
 });

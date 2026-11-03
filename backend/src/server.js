@@ -15,11 +15,14 @@ function send(res, status, body) {
 const MAX_CHECKOUT_BODY_BYTES = 64 * 1024;
 
 async function readJson(req, maxBytes = Infinity) {
-  let raw = '';
+  const chunks = [];
+  let bytes = 0;
   for await (const chunk of req) {
-    raw += chunk;
-    if (raw.length > maxBytes) throw new RedemptionError('PAYLOAD_TOO_LARGE', 'Request body is too large.', 413);
+    bytes += chunk.length;
+    if (bytes > maxBytes) throw new RedemptionError('PAYLOAD_TOO_LARGE', 'Request body is too large.', 413);
+    chunks.push(chunk);
   }
+  const raw = Buffer.concat(chunks).toString('utf8');
   return raw ? JSON.parse(raw) : {};
 }
 
