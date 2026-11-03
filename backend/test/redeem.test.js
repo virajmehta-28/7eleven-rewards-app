@@ -23,6 +23,12 @@ test('finds a reward by string id (as parsed from the URL path)', () => {
   assert.equal(findReward('9999'), undefined);
 });
 
+test('rejects non-canonical numeric ids instead of coercing them', () => {
+  for (const id of ['1.042e3', '0x412', ' 1042', '1042.0', '', 'abc']) {
+    assert.equal(findReward(id), undefined, id);
+  }
+});
+
 test('rejects an unknown reward with REWARD_NOT_FOUND instead of crashing', () => {
   const m = member();
   assert.throws(() => redeemReward(m, '9999'), (e) => e instanceof RedemptionError && e.code === 'REWARD_NOT_FOUND' && e.status === 404);

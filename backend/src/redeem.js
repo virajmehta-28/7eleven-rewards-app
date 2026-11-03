@@ -9,6 +9,7 @@ export class RedemptionError extends Error {
 }
 
 export function findReward(rewardId) {
+  if (!/^\d+$/.test(String(rewardId))) return undefined;
   const id = Number(rewardId);
   return REWARDS.find((r) => r.id === id);
 }
