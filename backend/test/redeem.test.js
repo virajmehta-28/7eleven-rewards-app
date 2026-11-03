@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { redeemReward, RedemptionError } from '../src/redeem.js';
+import { findReward, redeemReward, RedemptionError } from '../src/redeem.js';
 
 const member = () => ({ id: 't', points: 1000, redemptions: [] });
 
@@ -15,5 +15,22 @@ test('redeems a reward and deducts points', () => {
 test('rejects redemption with insufficient points', () => {
   const m = member();
   assert.throws(() => redeemReward(m, 1072), RedemptionError);
+  assert.equal(m.points, 1000);
+});
+
+test('finds a reward by string id (as parsed from the URL path)', () => {
+  assert.equal(findReward('1042')?.id, 1042);
+  assert.equal(findReward('9999'), undefined);
+});
+
+test('rejects non-canonical numeric ids instead of coercing them', () => {
+  for (const id of ['1.042e3', '0x412', ' 1042', '1042.0', '', 'abc']) {
+    assert.equal(findReward(id), undefined, id);
+  }
+});
+
+test('rejects an unknown reward with REWARD_NOT_FOUND instead of crashing', () => {
+  const m = member();
+  assert.throws(() => redeemReward(m, '9999'), (e) => e instanceof RedemptionError && e.code === 'REWARD_NOT_FOUND' && e.status === 404);
   assert.equal(m.points, 1000);
 });
