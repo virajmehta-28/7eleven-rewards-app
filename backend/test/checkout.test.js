@@ -107,6 +107,25 @@ test('confirm is idempotent for a replayed preview token', () => {
   assert.equal(m.redemptions.length, 1);
 });
 
+test('confirmed token is never applied twice once the replay cache is gone', () => {
+  const m = member(1000);
+  const cart = [{ sku: 'SLP-COKE-M', quantity: 1 }];
+  const p = previewCheckout(m, cart);
+  const now = Date.now();
+  confirmCheckout(m, { cart, previewToken: p.previewToken }, now);
+  assert.throws(() => confirmCheckout(m, { cart, previewToken: p.previewToken }, now + PREVIEW_TTL_MS + 1000), errCode('ORDER_ALREADY_PLACED'));
+  assert.equal(m.points, 700);
+  assert.equal(m.redemptions.length, 1);
+});
+
+test('each applied reward reports the balance after its own redemption', () => {
+  const m = member(1000);
+  const cart = [{ sku: 'SLP-COKE-M', quantity: 1 }, { sku: 'BKY-7S-GLZ', quantity: 1 }];
+  const c = confirmCheckout(m, { cart, previewToken: previewCheckout(m, cart).previewToken });
+  assert.deepEqual(c.appliedRewards.map((a) => a.remainingPoints), m.redemptions.map((r) => r.remainingPoints));
+  assert.equal(c.appliedRewards.at(-1).remainingPoints, c.remainingPoints);
+});
+
 test('confirm rejects a changed cart', () => {
   const m = member(1000);
   const p = previewCheckout(m, [{ sku: 'SLP-COKE-M', quantity: 1 }]);
@@ -172,4 +191,14 @@ test('HTTP: preview then confirm end-to-end', async (t) => {
   const bad = await post('/checkout/preview', '{not json');
   assert.equal(bad.status, 400);
   assert.equal(bad.body.error, 'INVALID_REQUEST');
+
+  for (const path of ['/checkout/preview', '/checkout/confirm']) {
+    const nullBody = await post(path, 'null');
+    assert.equal(nullBody.status, 400);
+    assert.equal(nullBody.body.error, 'INVALID_REQUEST');
+  }
+
+  const huge = await post('/checkout/preview', { cart, pad: 'x'.repeat(70 * 1024) });
+  assert.equal(huge.status, 413);
+  assert.equal(huge.body.error, 'PAYLOAD_TOO_LARGE');
 });
