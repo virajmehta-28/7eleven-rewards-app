@@ -12,18 +12,29 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-async function readJson(req) {
+const MAX_CHECKOUT_BODY_BYTES = 64 * 1024;
+
+async function readJson(req, maxBytes = Infinity) {
   let raw = '';
-  for await (const chunk of req) raw += chunk;
+  for await (const chunk of req) {
+    raw += chunk;
+    if (raw.length > maxBytes) throw new RedemptionError('PAYLOAD_TOO_LARGE', 'Request body is too large.', 413);
+  }
   return raw ? JSON.parse(raw) : {};
 }
 
 async function readCheckoutBody(req) {
+  let body;
   try {
-    return await readJson(req);
-  } catch {
+    body = await readJson(req, MAX_CHECKOUT_BODY_BYTES);
+  } catch (err) {
+    if (err instanceof RedemptionError) throw err;
     throw new RedemptionError('INVALID_REQUEST', 'Request body must be valid JSON.', 400);
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new RedemptionError('INVALID_REQUEST', 'Request body must be a JSON object.', 400);
+  }
+  return body;
 }
 
 export async function handle(req, res) {
