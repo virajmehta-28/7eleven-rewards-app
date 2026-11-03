@@ -160,6 +160,12 @@ function summarize(lines, picks, pointsBalance) {
   };
 }
 
+// Replays are only answered from cache while the token could still be confirmed; afterwards
+// PREVIEW_EXPIRED / ORDER_ALREADY_PLACED reject them, so older entries can go.
+function pruneConfirmedOrders(now) {
+  for (const [pid, { exp }] of confirmedOrders) if (now > exp) confirmedOrders.delete(pid);
+}
+
 export function previewCheckout(member, cart, now = Date.now()) {
   const lines = normalizeCart(cart);
   const picks = selectRewards(lines, member.points);
@@ -184,8 +190,12 @@ export function confirmCheckout(member, { cart, previewToken } = {}, now = Date.
   const token = verify(previewToken);
   if (token.mid !== member.id) throw new RedemptionError('INVALID_PREVIEW_TOKEN', 'Checkout session is invalid. Please review your order again.', 400);
 
+  pruneConfirmedOrders(now);
   const prior = confirmedOrders.get(token.pid);
-  if (prior) return { ...prior, replayed: true };
+  if (prior) return { ...prior.confirmation, replayed: true };
+  if (member.redemptions.some((r) => r.previewId === token.pid)) {
+    throw new RedemptionError('ORDER_ALREADY_PLACED', 'This order was already placed.', 409);
+  }
 
   if (now > token.exp) throw new RedemptionError('PREVIEW_EXPIRED', 'Your checkout session expired. Please review your order again.', 409);
   const lines = normalizeCart(cart);
@@ -206,7 +216,7 @@ export function confirmCheckout(member, { cart, previewToken } = {}, now = Date.
   const redemptionsBefore = member.redemptions.length;
   let redemptions;
   try {
-    redemptions = picks.map((p) => applyRedemption(member, p.reward, { orderId, sku: p.sku }));
+    redemptions = picks.map((p) => applyRedemption(member, p.reward, { orderId, sku: p.sku, previewId: token.pid }));
   } catch (err) {
     member.points = pointsBefore;
     member.redemptions.length = redemptionsBefore;
@@ -221,12 +231,13 @@ export function confirmCheckout(member, { cart, previewToken } = {}, now = Date.
     appliedRewards: rest.appliedRewards.map((a, i) => ({
       ...a,
       confirmationCode: redemptions[i].confirmationCode,
-      expiresAt: redemptions[i].expiresAt
+      expiresAt: redemptions[i].expiresAt,
+      remainingPoints: redemptions[i].remainingPoints
     })),
     pointsBalance: pointsBefore,
     remainingPoints: member.points,
     confirmedAt: new Date(now).toISOString()
   };
-  confirmedOrders.set(token.pid, confirmation);
+  confirmedOrders.set(token.pid, { confirmation, exp: token.exp });
   return confirmation;
 }
