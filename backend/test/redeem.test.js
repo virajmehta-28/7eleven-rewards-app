@@ -31,3 +31,11 @@ test('rejects an unknown reward id with REWARD_NOT_FOUND', () => {
   assert.throws(() => redeemReward(m, '9999'), (err) => err instanceof RedemptionError && err.code === 'REWARD_NOT_FOUND' && err.status === 404);
   assert.equal(m.points, 1000);
 });
+
+test('rejects malformed ids that only coerce to a catalog id', () => {
+  const m = member();
+  for (const bad of ['1042e0', '0x412', ' 1042', '1042.0']) {
+    assert.throws(() => redeemReward(m, bad), (err) => err instanceof RedemptionError && err.code === 'REWARD_NOT_FOUND', bad);
+  }
+  assert.equal(m.points, 1000);
+});

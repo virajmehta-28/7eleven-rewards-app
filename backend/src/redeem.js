@@ -9,8 +9,8 @@ export class RedemptionError extends Error {
 }
 
 export function findReward(rewardId) {
-  const id = Number(rewardId);
-  return REWARDS.find((r) => r.id === id);
+  const id = String(rewardId);
+  return REWARDS.find((r) => String(r.id) === id);
 }
 
 export function redeemReward(member, rewardId) {
