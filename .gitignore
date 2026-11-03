@@ -1,0 +1,6 @@
+node_modules/
+ios/build/
+ios/*.xcodeproj/
+.env
+*.log
+.DS_Store

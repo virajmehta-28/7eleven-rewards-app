@@ -1,0 +1,31 @@
+name: SevenRewards
+options:
+  bundleIdPrefix: com.sei
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  SevenRewards:
+    type: application
+    platform: iOS
+    sources:
+      - SevenRewards/Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sei.ios.demo
+        PRODUCT_NAME: 7-Eleven
+        MARKETING_VERSION: "8.42.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGNING_ALLOWED: NO
+    info:
+      path: SevenRewards/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: 7-Eleven
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        SevenRewardsAPIBaseURL: http://localhost:8787

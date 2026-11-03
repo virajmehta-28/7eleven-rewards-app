@@ -1,0 +1,13 @@
+{
+  "name": "7rewards-api",
+  "version": "1.4.2",
+  "private": true,
+  "description": "7REWARDS loyalty + shopping API backing the 7-Eleven iOS app",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
