@@ -38,9 +38,10 @@ struct AccountView: View {
     private func row(_ icon: String, _ title: String, _ value: String) -> some View {
         HStack {
             Image(systemName: icon).foregroundStyle(Brand.green).frame(width: 24)
-            Text(title)
+            Text(title).layoutPriority(1)
             Spacer()
-            Text(value).foregroundStyle(.secondary).lineLimit(1).font(.subheadline)
+            Text(value).foregroundStyle(.secondary).font(.subheadline)
+                .lineLimit(2).multilineTextAlignment(.trailing)
         }
     }
 }

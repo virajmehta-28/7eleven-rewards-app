@@ -30,5 +30,6 @@ struct RootView: View {
                 .tabItem { Label("Account", systemImage: "person.crop.circle") }.tag(4)
         }
         .tint(Brand.green)
+        .environment(\.locale, Locale(identifier: "en_US"))
     }
 }

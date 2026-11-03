@@ -52,7 +52,7 @@ struct RewardsView: View {
             }
             .background(Brand.background)
         }
-        .sheet(item: $selected) { RedeemSheet(reward: $0).presentationDetents([.medium, .large]) }
+        .sheet(item: $selected) { RedeemSheet(reward: $0).presentationDetents([.medium, .large]).presentationBackground(Brand.background).presentationDragIndicator(.visible) }
     }
 
     private var balance: some View {
@@ -84,9 +84,9 @@ struct RedeemSheet: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            Capsule().fill(.secondary.opacity(0.3)).frame(width: 40, height: 5).padding(.top, 8)
             Image(systemName: reward.image).font(.system(size: 54)).foregroundStyle(Brand.green)
                 .frame(width: 110, height: 110).background(Brand.green.opacity(0.1), in: Circle())
+                .padding(.top, 24)
             Text(reward.name).font(.title2.weight(.heavy)).multilineTextAlignment(.center)
             PointsPill(points: reward.pointsCost)
 

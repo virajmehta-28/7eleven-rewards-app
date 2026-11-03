@@ -18,7 +18,7 @@ struct HomeView: View {
                     sectionHeader("Today's Deals", action: { selectedTab = 1 })
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            ForEach(SampleData.deals) { DealCard(deal: $0).frame(width: 240) }
+                            ForEach(SampleData.deals) { DealCard(deal: $0).frame(width: 280) }
                         }
                     }
                     sectionHeader("Redeem your points", action: { selectedTab = 2 })
