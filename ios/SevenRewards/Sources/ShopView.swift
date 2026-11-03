@@ -3,6 +3,7 @@ import SwiftUI
 struct ShopView: View {
     @EnvironmentObject var store: RewardsStore
     @State private var category = "Drinks"
+    @State private var showCheckout = false
     private let categories = ["Drinks", "Hot Foods", "Snacks", "Essentials"]
 
     var body: some View {
@@ -36,7 +37,7 @@ struct ShopView: View {
             }
             .listStyle(.plain)
             if store.cartCount > 0 {
-                Button {} label: {
+                Button { showCheckout = true } label: {
                     HStack {
                         Text("View Cart (\(store.cartCount))")
                         Spacer()
@@ -46,8 +47,15 @@ struct ShopView: View {
                 }
                 .buttonStyle(SevenButtonStyle())
                 .padding()
+                .accessibilityIdentifier("view-cart-button")
             }
         }
         .background(Brand.background)
+        .sheet(isPresented: $showCheckout) {
+            CheckoutView()
+                .environmentObject(store)
+                .environment(\.locale, Locale(identifier: "en_US"))
+                .presentationDragIndicator(.visible)
+        }
     }
 }

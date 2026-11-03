@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { REWARDS, MEMBERS } from './catalog.js';
 import { redeemReward, RedemptionError } from './redeem.js';
+import { previewCheckout, confirmCheckout } from './checkout.js';
 import { newIncidentId, reportToOncall } from './oncall.js';
 
 const PORT = Number(process.env.PORT || 8787);
@@ -17,6 +18,14 @@ async function readJson(req) {
   return raw ? JSON.parse(raw) : {};
 }
 
+async function readCheckoutBody(req) {
+  try {
+    return await readJson(req);
+  } catch {
+    throw new RedemptionError('INVALID_REQUEST', 'Request body must be valid JSON.', 400);
+  }
+}
+
 export async function handle(req, res) {
   const { pathname } = new URL(req.url, 'http://localhost');
   req.path = pathname;
@@ -28,6 +37,14 @@ export async function handle(req, res) {
 
     if (req.method === 'GET' && pathname === '/api/member') return send(res, 200, member);
     if (req.method === 'GET' && pathname === '/api/rewards') return send(res, 200, REWARDS);
+
+    if (req.method === 'POST' && pathname === '/checkout/preview') {
+      const { cart } = await readCheckoutBody(req);
+      return send(res, 200, previewCheckout(member, cart));
+    }
+    if (req.method === 'POST' && pathname === '/checkout/confirm') {
+      return send(res, 200, confirmCheckout(member, await readCheckoutBody(req)));
+    }
 
     const m = pathname.match(/^\/api\/rewards\/([^/]+)\/redeem$/);
     if (req.method === 'POST' && m) {
