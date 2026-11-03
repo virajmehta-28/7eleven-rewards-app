@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { REWARDS, MEMBERS } from './catalog.js';
 import { redeemReward, RedemptionError } from './redeem.js';
+import { previewCheckout, confirmCheckout } from './checkout.js';
 import { newIncidentId, reportToOncall } from './oncall.js';
 
 const PORT = Number(process.env.PORT || 8787);
@@ -11,10 +12,32 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-async function readJson(req) {
-  let raw = '';
-  for await (const chunk of req) raw += chunk;
+const MAX_CHECKOUT_BODY_BYTES = 64 * 1024;
+
+async function readJson(req, maxBytes = Infinity) {
+  const chunks = [];
+  let bytes = 0;
+  for await (const chunk of req) {
+    bytes += chunk.length;
+    if (bytes > maxBytes) throw new RedemptionError('PAYLOAD_TOO_LARGE', 'Request body is too large.', 413);
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString('utf8');
   return raw ? JSON.parse(raw) : {};
+}
+
+async function readCheckoutBody(req) {
+  let body;
+  try {
+    body = await readJson(req, MAX_CHECKOUT_BODY_BYTES);
+  } catch (err) {
+    if (err instanceof RedemptionError) throw err;
+    throw new RedemptionError('INVALID_REQUEST', 'Request body must be valid JSON.', 400);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new RedemptionError('INVALID_REQUEST', 'Request body must be a JSON object.', 400);
+  }
+  return body;
 }
 
 export async function handle(req, res) {
@@ -28,6 +51,14 @@ export async function handle(req, res) {
 
     if (req.method === 'GET' && pathname === '/api/member') return send(res, 200, member);
     if (req.method === 'GET' && pathname === '/api/rewards') return send(res, 200, REWARDS);
+
+    if (req.method === 'POST' && pathname === '/checkout/preview') {
+      const { cart } = await readCheckoutBody(req);
+      return send(res, 200, previewCheckout(member, cart));
+    }
+    if (req.method === 'POST' && pathname === '/checkout/confirm') {
+      return send(res, 200, confirmCheckout(member, await readCheckoutBody(req)));
+    }
 
     const m = pathname.match(/^\/api\/rewards\/([^/]+)\/redeem$/);
     if (req.method === 'POST' && m) {
