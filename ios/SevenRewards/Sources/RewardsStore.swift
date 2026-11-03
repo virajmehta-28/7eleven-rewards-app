@@ -111,9 +111,9 @@ final class RewardsStore: ObservableObject {
             let codes = confirmation.appliedRewards.compactMap { a -> Redemption? in
                 guard let code = a.confirmationCode else { return nil }
                 return Redemption(confirmationCode: code, rewardId: a.rewardId, rewardName: a.name, pointsSpent: a.pointsSpent,
-                                  remainingPoints: confirmation.remainingPoints, expiresAt: a.expiresAt ?? "")
+                                  remainingPoints: a.remainingPoints ?? confirmation.remainingPoints, expiresAt: a.expiresAt ?? "")
             }
-            redemptions.insert(contentsOf: codes, at: 0)
+            redemptions.insert(contentsOf: codes.reversed(), at: 0)
         }
         cart = [:]
         return confirmation

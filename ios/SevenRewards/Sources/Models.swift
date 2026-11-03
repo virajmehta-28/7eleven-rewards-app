@@ -60,6 +60,7 @@ struct AppliedReward: Codable, Hashable {
     let savings: Double
     var confirmationCode: String?
     var expiresAt: String?
+    var remainingPoints: Int?
 }
 
 struct UnappliedReward: Codable, Hashable {
